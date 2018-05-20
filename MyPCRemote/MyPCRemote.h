@@ -9,7 +9,7 @@
 #endif
 
 #include "resource.h"		// main symbols
-
+#include "IniFile.h"
 
 // CMyPCRemoteApp:
 // See MyPCRemote.cpp for the implementation of this class
@@ -18,6 +18,7 @@
 class CMyPCRemoteApp : public CWinApp
 {
 public:
+	CIniFile	m_IniFile;
 	CMyPCRemoteApp();
 
 // Overrides

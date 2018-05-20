@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{b30e7f83-0571-4340-8f2c-d6ff9c15c1c7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -36,6 +39,30 @@
     <ClInclude Include="TrueColorToolBar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MyDebug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Buffer.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\CpuUsage.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\IOCPServer.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Mapper.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="MyLog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IniFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SettingDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MyPCRemote.cpp">
@@ -48,6 +75,27 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TrueColorToolBar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="include\Buffer.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
+    <ClCompile Include="include\CpuUsage.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
+    <ClCompile Include="include\IOCPServer.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
+    <ClCompile Include="MyLog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="IniFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SettingDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MyDebug.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

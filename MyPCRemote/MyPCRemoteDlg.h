@@ -6,6 +6,9 @@
 #include "afxcmn.h"
 #include "TrueColorToolBar.h"
 
+
+
+
 // CMyPCRemoteDlg dialog
 class CMyPCRemoteDlg : public CDialogEx
 {
@@ -29,6 +32,11 @@ protected:
 	NOTIFYICONDATA m_NotifyIconData;
 
 	// Generated message map functions
+	void InitListControlor();
+	void InitMenu();
+	void Activate(UINT nPort, UINT nMaxConnections);
+	int GetWidthOfListOnLine();
+	int GetWidthOfListLog();
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnPaint();
@@ -40,13 +48,12 @@ public:
 	int m_iWidthOfListOnline;
 	int m_iWidthOfListLog;
 	afx_msg void OnSize(UINT nType, int cx, int cy);
-	void InitListControlor();
-	void InitMenu();
-	int GetWidthOfListOnLine();
-	int GetWidthOfListLog();
+
 	void AddOnlinePc(CString strIP, CString strAddr, CString strPCName, CString strOS, CString strCPU, CString strCamera, CString strPing);
 	void DeleteOnlinePc(int iItem);
-	void AddNewLog(bool bIsOk, CString strMsg);
+	
+
+	void AddNewLog(LOG_TYPE_CODE logType, CString strMsg);
 	void Test(); // 测试功能使用
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnNMRClickListOnline(NMHDR *pNMHDR, LRESULT *pResult);
@@ -74,7 +81,10 @@ protected:
 public:
 	afx_msg void OnNotifyShow();
 	afx_msg void OnNotifyExit();
+
+	static void CALLBACK NotifyProc(LPVOID lpParam, ClientContext* pContext, UINT nCode);
 //	afx_msg void OnDropFiles(HDROP hDropInfo);
+	void ListenPort();
 };
 
 

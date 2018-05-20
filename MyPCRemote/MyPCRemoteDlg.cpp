@@ -6,7 +6,7 @@
 #include "MyPCRemote.h"
 #include "MyPCRemoteDlg.h"
 #include "afxdialogex.h"
-
+#include "SettingDlg.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -29,6 +29,9 @@ LIST_COLUMN g_ListLog[] = {
 
 };
 
+CIOCPServer * g_pIocpServer = NULL;
+
+char * g_pszLogTypeNameDir[1024];
 
 // CAboutDlg dialog used for App About
 
@@ -47,6 +50,8 @@ public:
 protected:
 	DECLARE_MESSAGE_MAP()
 //	afx_msg LRESULT OnUmIconnotify(WPARAM wParam, LPARAM lParam);
+public:
+	virtual BOOL OnInitDialog();
 };
 
 CAboutDlg::CAboutDlg() : CDialogEx(CAboutDlg::IDD)
@@ -145,11 +150,12 @@ BOOL CMyPCRemoteDlg::OnInitDialog()
 	InitListControlor();
 	InitMenu();
 	CreateStatusBar();
-	AddNewLog(true, "MyPCRemote Start up");
+	AddNewLog(LOG_NORMAL, "MyPCRemote Start up");
 	CreateMainToolBar();
 	CreateNotifyIcon();
 	UpdataWindowSize();
-	AddNewLog(true, "MyPCRemote initializing complete");
+	ListenPort();
+	AddNewLog(LOG_NORMAL, "MyPCRemote initializing complete");
 #ifdef DEBUG
 	Test();
 #endif // DEBUG
@@ -323,45 +329,40 @@ void CMyPCRemoteDlg::AddOnlinePc(CString strIP, CString strAddr, CString strPCNa
 	m_CList_Online.SetItemText(0, ONLINE_LIST_VIDEO, strCamera);
 	m_CList_Online.SetItemText(0, ONLINE_LIST_PING, strPing);
 
-	AddNewLog(true, strIP + " Online");
+	AddNewLog(LOG_ONLINE, strIP + " Online");
 }
 
 
 void CMyPCRemoteDlg::DeleteOnlinePc(int iItem){
-
+	// AddNewLog(OnOnlineOffline, strIP + " Online");
 }
 
 
-void CMyPCRemoteDlg::AddNewLog(bool bIsOK, CString strMsg){
-	CString strIsOK, strTime;
+void CMyPCRemoteDlg::AddNewLog(LOG_TYPE_CODE LogType, CString strMsg){
+	CString strTime;
 	CTime t = CTime::GetCurrentTime();
 	strTime = t.Format("%H:%M:%S");
-	if (bIsOK)
-	{
-		strIsOK = "sucessful";
-	}
-	else{
-		strIsOK = "fauil";
-	}
+
 	m_CList_Log.InsertItem(0, strTime);
-	m_CList_Log.SetItemText(0, 1, strIsOK);
+	m_CList_Log.SetItemText(0, 1, MyLog.GetLogName(LogType));
 	m_CList_Log.SetItemText(0, 2, strMsg);
 
 	CString strStatusMsg;
-	if (strMsg.Find("Online") > 0)         //处理上线还是下线消息
+	if (LogType == LOG_ONLINE)         //处理上线还是下线消息
 	{
 		m_iPCCount++;
 	}
-	else if (strMsg.Find("Offline") > 0)
+	else if (LogType == LOG_OFFLINE)
 	{
 		m_iPCCount--;
 	}
-	else if (strMsg.Find("Disconnect") > 0)
+	else if (LogType == LOG_DISCONNECT)
 	{
 		m_iPCCount--;
 	}
+
 	m_iPCCount = (m_iPCCount <= 0 ? 0 : m_iPCCount);         //防止iCount 有-1的情况
-	strStatusMsg.Format("连接:%d", m_iPCCount);
+	strStatusMsg.Format("connected: %d", m_iPCCount);
 	m_wndStatusBar.SetPaneText(0, strStatusMsg);   //在状态条上显示文字
 }
 
@@ -504,7 +505,10 @@ void CMyPCRemoteDlg::OnMainSettingGenServerside()
 void CMyPCRemoteDlg::OnMainSettingSetupparameters()
 {
 	// TODO: Add your command handler code here
-	MessageBox("OnMainSettingSetupparameters");
+	// MessageBox("OnMainSettingSetupparameters");
+
+	CSettingDlg SettingDlg;
+	SettingDlg.DoModal();
 }
 
 
@@ -545,7 +549,7 @@ void CMyPCRemoteDlg::OnOnlineOffline()
 	strIP = m_CList_Online.GetItemText(iSelect, ONLINE_LIST_IP);
 	m_CList_Online.DeleteItem(iSelect);
 	strIP += " Offline";
-	AddNewLog(true, strIP);
+	AddNewLog(LOG_OFFLINE, strIP);
 }
 
 
@@ -653,9 +657,108 @@ void CMyPCRemoteDlg::OnNotifyExit()
 }
 
 
-//void CMyPCRemoteDlg::OnDropFiles(HDROP hDropInfo)
-//{
-//	// TODO: Add your message handler code here and/or call default
-//
-//	CDialogEx::OnDropFiles(hDropInfo);
-//}
+void CMyPCRemoteDlg::Activate(UINT nPort, UINT nMaxConnections) // 参数 nMaxConnections 没有用
+{
+	CString		str;
+
+	if (g_pIocpServer != NULL)
+	{
+		g_pIocpServer->Shutdown();
+		delete g_pIocpServer;
+
+	}
+	g_pIocpServer = new CIOCPServer;
+
+	// 开启IPCP服务器
+	if (g_pIocpServer->Initialize(NotifyProc, NULL, 100000, nPort))
+	{
+
+		char hostname[256];
+		gethostname(hostname, sizeof(hostname));
+		MyOutputDebugString("gethostname_:%s", hostname);
+		HOSTENT *host = gethostbyname(hostname);
+		if (host != NULL)
+		{
+			for (int i = 0;; i++)
+			{
+				str += inet_ntoa(*(IN_ADDR*)host->h_addr_list[i]);
+
+				if (host->h_addr_list[i] + host->h_length >= host->h_name)
+					break;
+				str += "/";
+			}
+		}
+		str.Format("Listening port succeeded! Port:%d-MaxConnect:%d", nPort, nMaxConnections);
+		AddNewLog(LOG_NORMAL, str);
+	}else
+	{
+		str.Format("Listening port failed   ! Port:%d", nPort);
+		AddNewLog(LOG_ERROR, str);
+
+	}
+	
+}
+
+
+void CALLBACK CMyPCRemoteDlg::NotifyProc(LPVOID lpParam, ClientContext *pContext, UINT nCode){
+	try
+	{
+// 		CMainFrame* pFrame = (CMainFrame*)lpParam;
+// 		CString str;
+// 		// 对g_pConnectView 进行初始化
+// 		g_pConnectView = (CGh0stView *)((CGh0stApp *)AfxGetApp())->m_pConnectView;
+// 
+// 		// g_pConnectView还没创建，这情况不会发生
+// 		if (((CGh0stApp *)AfxGetApp())->m_pConnectView == NULL)
+// 			return;
+// 
+// 		g_pConnectView->g_pIocpServer = g_pIocpServer;
+// 
+// 		str.Format("S: %.2f kb/s R: %.2f kb/s", (float)g_pIocpServer->m_nSendKbps / 1024, (float)g_pIocpServer->m_nRecvKbps / 1024);
+// 		g_pFrame->m_wndStatusBar.SetPaneText(1, str);
+
+		switch (nCode)
+		{
+		case NC_CLIENT_CONNECT:
+			MyOutputDebugString("NotifyProc [Client Connect] ClientContext:%p nCode:%d", pContext, nCode);
+			break;
+		case NC_CLIENT_DISCONNECT:
+			// g_pConnectView->PostMessage(WM_REMOVEFROMLIST, 0, (LPARAM)pContext);
+			break;
+		case NC_TRANSMIT:
+			break;
+		case NC_RECEIVE:
+			MyOutputDebugString("NotifyProc [Recv] ClientContext:%p nCode:%d", pContext, nCode);
+			// ProcessReceive(pContext);
+			break;
+		case NC_RECEIVE_COMPLETE:
+			MyOutputDebugString("NotifyProc [Recv Complete] ClientContext:%p nCode:%d", pContext, nCode);
+			// ProcessReceiveComplete(pContext);
+			break;
+		}
+	}
+	catch (...){}
+}
+
+void CMyPCRemoteDlg::ListenPort()
+{
+	int	nPort = ((CMyPCRemoteApp *)AfxGetApp())->m_IniFile.GetInt("Settings", "ListenPort");
+	int	nMaxConnection = ((CMyPCRemoteApp *)AfxGetApp())->m_IniFile.GetInt("Settings", "MaxConnection");
+	if (nPort == 0)
+		nPort = 80;
+	if (nMaxConnection == 0)
+		nMaxConnection = 10000;
+
+	Activate(nPort, nMaxConnection);
+}
+
+
+BOOL CAboutDlg::OnInitDialog()
+{
+	CDialogEx::OnInitDialog();
+
+	// TODO:  Add extra initialization here
+	UpdateData(FALSE);
+	return TRUE;  // return TRUE unless you set the focus to a control
+	// EXCEPTION: OCX Property Pages should return FALSE
+}

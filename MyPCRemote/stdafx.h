@@ -33,8 +33,9 @@
 
 #include <afxcontrolbars.h>     // MFC support for ribbons and control bars
 
-
-
+#include "MyDebug.h"
+#include "include/IOCPServer.h"
+#include "MyLog.h"
 enum MyEnum
 {
 	ONLINE_LIST_IP = 0,			// IP
